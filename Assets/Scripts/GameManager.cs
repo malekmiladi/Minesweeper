@@ -33,9 +33,9 @@ public class GameManager
             State = StateType.Playing,
             Width = dimensions.Item1,
             Height = dimensions.Item2,
+            Grid = new Cell[dimensions.Item1, dimensions.Item2],
+            MineCount = dimensions.Item1 + dimensions.Item2 + dimensions.Item2 / 2
         };
-        _state.Grid = new Cell[_state.Width, _state.Height];
-        _state.MineCount = _state.Width + _state.Height + _state.Height / 2;
     }
 
     public void NewGame((int, int) dimensions)
@@ -66,7 +66,7 @@ public class GameManager
                     position = new Vector3Int(x, y),
                     type = Cell.Type.Empty
                 };
-                _state.Grid[x, y] = cell;
+                UpdateGridCell(cell);
             }
         }
     }
@@ -75,15 +75,25 @@ public class GameManager
     {
         for (var _ = 0; _ < _state.MineCount; _++)
         {
-            int x;
-            int y;
-            do
-            {
-                x = Random.Range(0, _state.Width);
-                y = Random.Range(0, _state.Height);
-            } while (_state.Grid[x, y].type == Cell.Type.Mine);
-            _state.Grid[x, y].type = Cell.Type.Mine;
+            PlaceMine(GetRandomCellPosition());
         }
+    }
+
+    private Vector2Int GetRandomCellPosition()
+    {
+        int x;
+        int y;
+        do
+        {
+            x = Random.Range(0, _state.Width);
+            y = Random.Range(0, _state.Height);
+        } while (_state.Grid[x, y].type == Cell.Type.Mine);
+        return new Vector2Int(x, y);
+    }
+
+    private void PlaceMine(Vector2Int position)
+    {
+        _state.Grid[position.x, position.y].type = Cell.Type.Mine;
     }
     
     private void SetNumbers()
@@ -103,7 +113,7 @@ public class GameManager
                 {
                     cell.type = Cell.Type.Number;
                 }
-                _state.Grid[x, y] = cell;
+                UpdateGridCell(cell);
             }
         }
     }
