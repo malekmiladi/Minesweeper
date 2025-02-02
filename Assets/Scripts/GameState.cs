@@ -11,5 +11,6 @@ public struct GameState
     public int Height { get; set; }
     public Cell[,] Grid;
     public int MineCount;
+    public int FlagCount;
 }
 

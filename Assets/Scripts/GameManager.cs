@@ -1,6 +1,8 @@
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 
 public class GameManager
 {
@@ -18,15 +20,16 @@ public class GameManager
     private GameState _state;
     private readonly TileManager _tileManager;
     private readonly Camera _mainCamera;
+    private TMP_Text _mineText;
 
-    public GameManager(TileManager tileManager, Camera mainCamera, (int, int) dimensions)
+    public GameManager(TileManager tileManager, Camera mainCamera, TMP_Text remainingMinesText)
     {
         _tileManager = tileManager;
         _mainCamera = mainCamera;
-        InitializeState(dimensions);
+        _mineText = remainingMinesText;
     }
     
-    private void InitializeState((int, int) dimensions)
+    private void InitializeState((int, int) dimensions, int difficulty)
     {
         _state = new GameState
         {
@@ -34,17 +37,19 @@ public class GameManager
             Width = dimensions.Item1,
             Height = dimensions.Item2,
             Grid = new Cell[dimensions.Item1, dimensions.Item2],
-            MineCount = dimensions.Item1 + dimensions.Item2 + dimensions.Item2 / 2
+            MineCount = (int)(dimensions.Item1 * dimensions.Item2 * (difficulty / 100F)),
+            FlagCount = 0
         };
     }
 
-    public void NewGame((int, int) dimensions)
+    public void NewGame((int, int) dimensions, int difficulty)
     {
-        InitializeState(dimensions);
-        ResizeCamera();
+        InitializeState(dimensions, difficulty);
         InitializeField();
         PlaceMines();
         SetNumbers();
+        UpdateRemainingMinesText();
+        ResizeCamera();
     
         _tileManager.DrawField(_state.Grid);
     }
@@ -52,7 +57,7 @@ public class GameManager
     private void ResizeCamera()
     {
         _mainCamera.transform.position = new Vector3(_state.Width / 2F, _state.Height / 2F, -10F);
-        _mainCamera.orthographicSize = _state.Height / 2F;
+        _mainCamera.orthographicSize = (_state.Height + 2) / 2F;
     }
     
     private void InitializeField()
@@ -292,6 +297,15 @@ public class GameManager
             return;
         }
         cell.flagged = !cell.flagged;
+        if (cell.flagged)
+        {
+            _state.FlagCount++;
+        }
+        else
+        {
+            _state.FlagCount--;
+        }
+        UpdateRemainingMinesText();
         UpdateGridCell(cell);
     }
 
@@ -314,6 +328,15 @@ public class GameManager
     private bool IsValidCell(int x, int y)
     {
         return x >= 0 && x < _state.Width && y >= 0 && y < _state.Height;
+    }
+
+    public void UpdateRemainingMinesText()
+    {
+        _mineText.text = GetMineCount().ToString();
+    }
+    private int GetMineCount()
+    {
+        return _state.MineCount - _state.FlagCount;
     }
     
 }
